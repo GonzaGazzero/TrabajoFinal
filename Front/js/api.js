@@ -1,7 +1,7 @@
 // Frontend (Netlify) y backend (Render) quedan en dominios distintos, así que
 // hace falta la URL pública real del backend acá. Reemplazar por la que te da
 // Render después de desplegarlo, algo como "https://tu-backend.onrender.com/api".
-const BACKEND_URL = "https://TU-BACKEND.onrender.com/api";
+const BACKEND_URL = "https://trabajofinal-om9z.onrender.com/api";
 
 const API_BASE_URL = (() => {
   const { hostname } = window.location;
