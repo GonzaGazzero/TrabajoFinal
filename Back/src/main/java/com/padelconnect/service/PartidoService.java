@@ -110,8 +110,6 @@ public class PartidoService {
             lng = coords[1];
         }
 
-        // Si el usuario especificó los jugadores faltantes que busca (ej: 2),
-        // los cupos totales del partido son jugadoresFaltantes + 1 (el organizador).
         int cuposTotales;
         if (dto.getJugadoresFaltantes() != null && dto.getJugadoresFaltantes() > 0) {
             cuposTotales = dto.getJugadoresFaltantes() + 1;
@@ -140,7 +138,6 @@ public class PartidoService {
 
         Partido partidoGuardado = partidoRepository.save(partido);
 
-        // El organizador queda inscripto como ACEPTADO automáticamente
         Inscripcion inscripcionOrganizador = new Inscripcion(partidoGuardado, organizador, EstadoInscripcion.ACEPTADO);
         inscripcionRepository.save(inscripcionOrganizador);
 
@@ -173,14 +170,12 @@ public class PartidoService {
                 String alreadyJoinedMsg = messageSource.getMessage("error.match.already_joined", null, LocaleContextHolder.getLocale());
                 throw new AlreadyJoinedException(alreadyJoinedMsg);
             } else {
-                // Si estaba rechazado previamente, se actualiza a PENDIENTE para volver a solicitar
                 inc.setEstado(EstadoInscripcion.PENDIENTE);
                 inscripcionRepository.save(inc);
                 return buildPartidoResponseDTO(partido, null, null, usuario);
             }
         }
 
-        // Las solicitudes de nuevos usuarios quedan en estado PENDIENTE hasta ser aceptadas por el creador
         Inscripcion nuevaInscripcion = new Inscripcion(partido, usuario, EstadoInscripcion.PENDIENTE);
         inscripcionRepository.save(nuevaInscripcion);
 
@@ -276,13 +271,11 @@ public class PartidoService {
             throw new BadRequestException(msg);
         }
 
-        // Partidos creados por el usuario
         List<Partido> partidosCreados = partidoRepository.findByOrganizador(usuario);
         List<PartidoResponseDTO> creadosDTO = partidosCreados.stream()
                 .map(p -> buildPartidoResponseDTO(p, userLat, userLng, usuario))
                 .collect(Collectors.toList());
 
-        // Partidos a los que se unió (donde NO es el organizador)
         List<Inscripcion> inscripciones = inscripcionRepository.findByJugador(usuario);
         List<PartidoResponseDTO> unidosDTO = inscripciones.stream()
                 .map(Inscripcion::getPartido)

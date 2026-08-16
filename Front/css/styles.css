@@ -1,7 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Paleta acorde al logo: verde lima + azul marino */
   --bg-main: #0a1120;
   --bg-card: #101a30;
   --bg-card-hover: #182848;
@@ -356,9 +355,6 @@ body {
   cursor: pointer;
 }
 
-/* Los navegadores dibujan el ícono nativo de fecha/hora en gris oscuro,
-   invisible sobre nuestro fondo oscuro. Lo invertimos para que se vea,
-   le damos un poco más de aire y un estado hover prolijo. */
 input[type="date"].form-control,
 input[type="time"].form-control {
   cursor: pointer;

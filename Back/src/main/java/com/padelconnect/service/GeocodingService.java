@@ -83,7 +83,6 @@ public class GeocodingService {
                 }
             }
         } catch (Exception e) {
-            // Fallback silencioso
         }
 
         return new double[]{-34.6037, -58.3816};

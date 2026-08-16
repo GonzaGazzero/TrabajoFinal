@@ -1,6 +1,3 @@
-// Frontend (Netlify) y backend (Render) quedan en dominios distintos, así que
-// hace falta la URL pública real del backend acá. Reemplazar por la que te da
-// Render después de desplegarlo, algo como "https://tu-backend.onrender.com/api".
 const BACKEND_URL = "https://trabajofinal-om9z.onrender.com/api";
 
 const API_BASE_URL = (() => {
@@ -12,9 +9,6 @@ const API_BASE_URL = (() => {
 const ApiService = {
   cachedZonas: null,
 
-  // Algunas respuestas de error (ej: 403 por falta de autenticación) llegan sin
-  // cuerpo. Parsear eso como JSON tira una excepción críptica ("Unexpected end
-  // of JSON input"); esto evita que ese error técnico se le muestre al usuario.
   async parseJsonSafe(response) {
     try {
       return await response.json();
@@ -23,13 +17,9 @@ const ApiService = {
     }
   },
 
-  // Adapta la forma de un partido devuelto por el backend real (Spring Boot)
-  // a la forma "plana" que usa la UI (mismo formato que el modo offline/localStorage),
-  // para que el resto del código no tenga que preocuparse por el origen de los datos.
   normalizeMatch(match) {
     if (!match) return match;
 
-    // Ya viene en formato "plano" (modo offline / localStorage): no hay nada que adaptar.
     if (match.solicitudes && !match.solicitudesPendientes) {
       return match;
     }
@@ -322,7 +312,7 @@ const ApiService = {
 
   calcularHaversine(lat1, lon1, lat2, lon2) {
     if (!lat1 || !lon1 || !lat2 || !lon2) return null;
-    const R = 6371; // Radio de la Tierra en km
+    const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = 
@@ -361,9 +351,6 @@ const ApiService = {
       });
 
       if (response.ok) {
-        // El backend ya geocodifica la zona y calcula distanciaKm/orden por cercanía
-        // (fórmula de Haversine) cuando se le pasan lat/lng, así que no hace falta
-        // repetir ese trabajo ni volver a consultar la API externa de Georef acá.
         const matches = await response.json();
         return matches.map(m => this.normalizeMatch(m));
       }
@@ -371,7 +358,6 @@ const ApiService = {
       console.warn("Error al conectar con backend Spring Boot:", err);
     }
 
-    // Fallback de filtrado local persistente
     let result = getStoredMatches();
 
     if (filters.zona && filters.zona !== "Todas las zonas" && filters.zona.trim() !== "") {
@@ -425,10 +411,9 @@ const ApiService = {
   },
 
   async createPartido(partidoData) {
-    // Obtener coordenadas de la zona indicada
     const coords = await this.obtenerCoordenadasLocalidad(partidoData.zona);
 
-    const cuposTotalesNum = 4; // Fijo siempre 4 jugadores
+    const cuposTotalesNum = 4;
     const cuposFaltantesNum = parseInt(partidoData.cuposFaltantes) || 1;
     const generoVal = partidoData.genero || 'Mixto';
 
@@ -467,7 +452,6 @@ const ApiService = {
       console.warn("Backend no disponible, guardando partido localmente");
     }
 
-    // Persistencia local en localStorage
     const currentUser = await this.getCurrentUser() || MOCK_CURRENT_USER;
     const iniciales = currentUser.nombre
       ? currentUser.nombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
@@ -574,7 +558,6 @@ const ApiService = {
     return match;
   },
 
-  // solicitud: { id: <idDelJugadorCandidato>, inscripcionId: <idDeLaInscripcion, solo existe si vino del backend real> }
   async responderSolicitud(partidoId, solicitud, accion) {
     const candidatoId = solicitud && solicitud.id;
     const inscripcionId = solicitud && solicitud.inscripcionId;

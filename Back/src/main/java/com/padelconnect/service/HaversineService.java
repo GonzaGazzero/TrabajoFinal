@@ -7,16 +7,6 @@ public class HaversineService {
 
     private static final double EARTH_RADIUS_KM = 6371.0;
 
-    /**
-     * Calcula la distancia en kilómetros entre dos puntos geográficos (latitud y longitud)
-     * utilizando la fórmula matemática de Haversine.
-     *
-     * @param lat1 Latitud del punto 1
-     * @param lon1 Longitud del punto 1
-     * @param lat2 Latitud del punto 2
-     * @param lon2 Longitud del punto 2
-     * @return Distancia redondeada a un decimal (en km)
-     */
     public Double calcularDistanciaKm(Double lat1, Double lon1, Double lat2, Double lon2) {
         if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) {
             return null;

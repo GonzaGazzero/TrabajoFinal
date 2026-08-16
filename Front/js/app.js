@@ -141,8 +141,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       container.innerHTML = matches.map(match => {
         const isFull = match.cuposDisponibles <= 0;
-        // Si el partido viene del backend real, ya trae calculado estadoInscripcionUsuario
-        // (ORGANIZADOR / ACEPTADO / PENDIENTE / NINGUNA); en modo offline se infiere a mano.
         const isJoined = match.estadoInscripcionUsuario
           ? match.estadoInscripcionUsuario === 'ACEPTADO'
           : !!(currentUser && match.jugadores && match.jugadores.some(j => j.id === currentUser.id || j.nombre === currentUser.nombre));
@@ -717,8 +715,6 @@ document.addEventListener('DOMContentLoaded', () => {
               renderMatchesList();
             },
             (error) => {
-              // Sin coordenadas reales no hay distancia que calcular: no tiene sentido
-              // fingir que se está ordenando por cercanía, así que se revierte el toggle.
               console.warn("No se pudo obtener la ubicación:", error);
               toggleCercania.disabled = false;
               toggleCercania.checked = false;
@@ -884,8 +880,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!toast || !toastMsg) return;
 
-    // El emoji ya viene incluido en el mensaje (✅ ❌ ⚠️ ⌛ 📍, etc.), así que
-    // acá solo coloreamos el borde del toast según el tipo, sin duplicar ícono.
     toastMsg.innerText = message;
     toast.classList.remove('toast-success', 'toast-danger', 'toast-info');
     toast.classList.add(`toast-${type}`);
