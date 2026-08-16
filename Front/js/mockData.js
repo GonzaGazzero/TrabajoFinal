@@ -1,10 +1,10 @@
 const MOCK_CURRENT_USER = {
   id: 101,
-  nombre: "Gonzalo Gazzero",
-  email: "gonzalo@ejemplo.com",
-  telefono: "5491134567890",
+  nombre: "Jugador Invitado",
+  email: "invitado@ejemplo.com",
+  telefono: "5491100000000",
   nivel: "Intermedio (4ta-5ta)",
-  avatarIniciales: "GG"
+  avatarIniciales: "JI"
 };
 
 const MOCK_ZONAS = [
