@@ -101,3 +101,26 @@ Casi todos los toasts de la app ya incluían su propio emoji en el mensaje (✅ 
 - Los inputs de fecha y hora tenían el ícono nativo del navegador invisible sobre el fondo oscuro (color por defecto, sin contraste); se corrigió con un filtro para que se vea, y se agregaron emojis (📅 🕐) a las etiquetas que faltaban en el formulario de "Crear Partido".
 - Los `<select>` usaban la flecha nativa del navegador; ahora tienen una flecha propia en verde lima, consistente con el resto del tema.
 - La tarjeta de filtros ganó un borde superior de acento y los inputs tienen un estado hover más claro.
+
+## Tercera ronda: despliegue
+
+Se definió el hosting concreto: frontend en Netlify, backend en un servicio que corra Java de forma persistente (Vercel se descartó de entrada porque solo corre funciones serverless, no procesos Java que quedan escuchando en un puerto).
+
+- Se agregó `Back/Dockerfile` (build multi-stage: Maven → JRE liviano), detectable automáticamente por Render, Railway o cualquier plataforma basada en Docker. Se verificó localmente que `mvn clean package` genera exactamente el `.jar` que el Dockerfile espera, y que el jar arranca correctamente respetando la variable `PORT` (no se pudo probar el build de Docker en sí por no haber Docker instalado en este entorno, pero el proceso de build y el jar resultante están verificados).
+- Se agregó `netlify.toml` en la raíz para que Netlify publique la carpeta `Front/` sin tener que configurarlo a mano en el dashboard.
+- `API_BASE_URL` en `Front/js/api.js` ahora es una constante explícita (`BACKEND_URL`) para completar con la URL real del backend una vez desplegado, ya que frontend y backend quedan en dominios distintos (no se puede asumir mismo origen).
+
+### Cuarta ronda: de Railway/MySQL a Render/Supabase (por disponibilidad real de free tier)
+
+La idea original era Railway para backend + MySQL. Al chequear en vivo, Railway ya no tiene un plan gratuito real (da un crédito de prueba chico y después cobra), así que se buscaron alternativas gratuitas verificando cada una en el momento (no de memoria):
+
+- **Clever Cloud** (MySQL): su página de precios ya no muestra un plan gratuito — parece haberlo discontinuado.
+- **db4free.net** (MySQL): al navegar al sitio, redirigió a un dominio completamente distinto con contenido inapropiado/spam — el dominio original parece comprometido o abandonado. **No usar.**
+- **Render** (backend): confirmado plan gratuito real vigente (con el conocido trade-off de que el servicio "duerme" tras ~15 min sin tráfico).
+- **Supabase** (PostgreSQL): confirmado plan gratuito real vigente (proyectos se pausan tras 1 semana sin actividad, pero no se borran).
+
+En base a eso se cambió la base de datos de producción de MySQL a PostgreSQL:
+
+- Se agregó `Back/src/main/resources/application-postgres.yml` (perfil `postgres`), análogo al de MySQL, usando el mismo contrato de variables de entorno (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`) ya establecido. El perfil `mysql` se dejó intacto para quien quiera seguir usándolo en desarrollo local.
+- Se instaló PostgreSQL localmente y se corrió el flujo completo (registro de dos usuarios, crear partido, unirse, aceptar solicitud) contra una base Postgres real para confirmar que Hibernate crea el esquema correctamente y que el comportamiento es idéntico al de MySQL/H2. Los 8 tests automatizados se volvieron a correr después del cambio y siguen pasando.
+- Se actualizó `docs/INSTALACION.md` con el paso a paso concreto para Render (backend) + Supabase (base) + Netlify (frontend), reemplazando la guía anterior de Railway.

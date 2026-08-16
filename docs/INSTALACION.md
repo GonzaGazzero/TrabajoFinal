@@ -78,38 +78,55 @@ Corre 8 tests (JUnit 5 + Spring Boot Test) contra una base H2 en memoria indepen
 
 Si el puerto 8080 ya está ocupado por una ejecución anterior que quedó colgada, liberarlo antes de levantar el backend de nuevo (`lsof -i :8080` en macOS/Linux) para evitar estar probando contra una versión vieja del código sin darse cuenta.
 
-## 5. Despliegue a producción (hosting)
+## 5. Despliegue a producción: Netlify (frontend) + Render (backend) + Supabase (PostgreSQL)
 
-El proyecto está preparado para desplegarse sin tocar código, usando variables de entorno.
+Esta es la combinación elegida para este proyecto, con las tres patas gratuitas verificadas (sin tarjeta):
 
-### Backend
+- **Netlify** — hosting estático del frontend.
+- **Render** — corre el backend Java (free tier: se "duerme" tras ~15 min sin uso; la siguiente consulta tarda ~30-50s en responder mientras despierta).
+- **Supabase** — base de datos PostgreSQL gestionada (free tier: 500MB, se pausa —no se borra— tras 1 semana sin actividad).
 
-1. Generar el `.jar` ejecutable:
-   ```bash
-   cd Back
-   mvn clean package
-   # genera target/padel-connect-backend-1.0.0.jar
+> Se descartaron Vercel y Railway para el backend (no ofrecen procesos Java persistentes gratis de forma confiable), y MySQL gestionado gratis no tiene hoy una opción estable — por eso el backend usa el perfil `postgres` en vez de `mysql` para producción (ambos perfiles conviven en el proyecto; `mysql` sigue sirviendo para desarrollo local si se prefiere).
+
+### 5.1 Base de datos en Supabase
+
+1. Crear cuenta en [supabase.com](https://supabase.com) → "New Project".
+2. Al crear el proyecto, Supabase pide una contraseña para la base — guardarla, hace falta después.
+3. Ir a **Project Settings → Database** y copiar los datos de conexión (host, puerto, nombre de la base, usuario). Ahí mismo Supabase suele mostrar directamente una URL de conexión con formato `postgresql://...` — solo hay que ajustarla al formato JDBC (ver siguiente paso).
+
+### 5.2 Backend en Render
+
+1. Crear cuenta en [render.com](https://render.com) → "New" → "Web Service" → conectar el repositorio de GitHub (subir el proyecto a un repo si todavía no está).
+2. En la configuración del servicio:
+   - **Root Directory**: `Back`
+   - **Runtime**: Docker (Render detecta el `Back/Dockerfile` automáticamente)
+   - **Instance Type**: Free
+3. Agregar las variables de entorno (Environment):
+
+   | Variable | Valor |
+   |---|---|
+   | `SPRING_PROFILES_ACTIVE` | `postgres` |
+   | `DB_URL` | `jdbc:postgresql://<host-de-supabase>:5432/postgres` |
+   | `DB_USERNAME` | `postgres` (o el usuario que muestre Supabase) |
+   | `DB_PASSWORD` | la contraseña que definiste al crear el proyecto en Supabase |
+   | `JWT_SECRET` | una clave propia, larga y secreta (no la que trae el repo) |
+
+   Render define `PORT` solo — no hace falta agregarla.
+4. Desplegar. Al terminar, Render da una URL pública (`https://tu-backend.onrender.com`). Verificar que responde: `https://tu-backend.onrender.com/api/partidos` debería devolver `[]` (puede tardar la primera vez mientras el servicio "despierta").
+
+> ⚠️ El `JWT_SECRET` que trae el repo es solo para desarrollo. En producción hay que definir uno propio vía variable de entorno — si alguien lo conoce puede firmar tokens válidos para cualquier usuario.
+
+### 5.3 Frontend en Netlify
+
+1. Antes de desplegar, editar `Front/js/api.js` y reemplazar `BACKEND_URL` por la URL real que generó Render en el paso anterior (con `/api` al final):
+   ```js
+   const BACKEND_URL = "https://tu-backend.onrender.com/api";
    ```
-2. Subirlo a cualquier hosting que corra Java 21 (Render, Railway, un VPS propio, etc.) y ejecutarlo con:
-   ```bash
-   java -jar padel-connect-backend-1.0.0.jar
-   ```
-3. Configurar estas variables de entorno según el hosting (todas son opcionales — sin ellas usa los valores de desarrollo):
+2. En [netlify.com](https://netlify.com) → "Add new site" → "Import an existing project" → conectar el mismo repositorio. El archivo `netlify.toml` en la raíz ya le indica a Netlify que la carpeta a publicar es `Front/`, así que no hace falta tocar nada más.
+3. Al terminar, Netlify da una URL pública (`https://tu-sitio.netlify.app`). Abrirla y probar el flujo completo: registro, crear partido, unirse, aceptar solicitud.
 
-   | Variable | Para qué sirve | Default |
-   |---|---|---|
-   | `PORT` | Puerto donde escucha el backend (varias plataformas lo asignan solas) | `8080` |
-   | `SPRING_PROFILES_ACTIVE` | Poner `mysql` para usar una base persistente en vez de H2 en memoria | *(vacío → H2)* |
-   | `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | Conexión a la base MySQL (solo si `SPRING_PROFILES_ACTIVE=mysql`) | conexión local |
-   | `JWT_SECRET` | Clave para firmar los tokens — **cambiarla en producción** | clave de desarrollo incluida en el repo |
+No hace falta tocar `CorsConfig` en el backend — ya acepta pedidos desde cualquier origen, así que Netlify y Render en dominios distintos funcionan sin configuración extra.
 
-   > ⚠️ El valor de `JWT_SECRET` que trae el repo es solo para desarrollo. En producción conviene definir uno propio y secreto vía variable de entorno — si alguien conoce la clave puede firmar tokens válidos para cualquier usuario.
+### 5.4 Alternativa sin base de datos externa
 
-### Frontend
-
-Al ser HTML/CSS/JS estático, se puede desplegar en cualquier hosting de archivos estáticos (Netlify, Vercel, GitHub Pages, Nginx, o el propio backend sirviéndolo desde `src/main/resources/static`). No requiere build.
-
-- Si el frontend y el backend quedan bajo el **mismo dominio** (recomendado, por ejemplo con un reverse proxy que enrute `/api` al backend), no hace falta tocar nada: `API_BASE_URL` lo detecta solo.
-- Si quedan en **dominios distintos**, hay que:
-  1. Reemplazar `API_BASE_URL` en `Front/js/api.js` por la URL pública del backend.
-  2. Verificar que el backend permita ese origen (`CorsConfig` ya acepta cualquier origen por defecto, así que no debería requerir cambios).
+Para probar el despliegue rápido sin conectar Supabase, alcanza con no definir `SPRING_PROFILES_ACTIVE` (o dejarlo vacío) en Render: el backend arranca igual con H2 en memoria. Los datos se pierden cada vez que Render "duerme" el servicio por inactividad y lo vuelve a levantar, pero sirve para confirmar que el resto del despliegue funciona.

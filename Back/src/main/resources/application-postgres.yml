@@ -1,0 +1,25 @@
+spring:
+  config:
+    activate:
+      on-profile: postgres
+
+  datasource:
+    # En hosting (ej: Supabase), sobreescribir con las variables de entorno
+    # DB_URL / DB_USERNAME / DB_PASSWORD. Los valores por defecto son para
+    # desarrollo local con un Postgres corriendo en localhost.
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/padelconnect_db}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# jwt.secret / jwt.expiration-ms se heredan de application.yml (ya soportan
+# override por variable de entorno JWT_SECRET / JWT_EXPIRATION_MS).

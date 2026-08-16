@@ -1,14 +1,12 @@
-// En desarrollo local el backend corre en el puerto 8080. En hosting se asume
-// que el backend se sirve bajo el mismo dominio que el frontend (por ejemplo,
-// detrás de un reverse proxy, o el propio Spring Boot sirviendo el frontend).
-// Si el backend queda en un dominio distinto, reemplazar por su URL completa.
+// Frontend (Netlify) y backend (Render) quedan en dominios distintos, así que
+// hace falta la URL pública real del backend acá. Reemplazar por la que te da
+// Render después de desplegarlo, algo como "https://tu-backend.onrender.com/api".
+const BACKEND_URL = "https://TU-BACKEND.onrender.com/api";
+
 const API_BASE_URL = (() => {
-  const { protocol, hostname, port } = window.location;
+  const { hostname } = window.location;
   const esLocal = hostname === "localhost" || hostname === "127.0.0.1";
-  if (esLocal && port !== "8080") {
-    return "http://localhost:8080/api";
-  }
-  return `${protocol}//${hostname}${port && esLocal ? `:${port}` : ""}/api`;
+  return esLocal ? "http://localhost:8080/api" : BACKEND_URL;
 })();
 
 const ApiService = {

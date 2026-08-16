@@ -81,6 +81,7 @@ El organizador **no** tiene una fila especial: al crear el partido se le genera 
 | Perfil | Cuándo se usa | Configuración |
 |---|---|---|
 | *(default, sin perfil activo)* | Desarrollo y evaluación sin instalar nada | H2 en memoria (`application.yml`), se recrea vacía en cada arranque. |
-| `mysql` | Persistencia real entre reinicios | `application-mysql.yml` — requiere una base `padelconnect_db` en `localhost:3306`. Ver [INSTALACION.md](INSTALACION.md). |
+| `mysql` | Persistencia real en desarrollo local | `application-mysql.yml` — requiere una base `padelconnect_db` en `localhost:3306`. |
+| `postgres` | Producción (Supabase) | `application-postgres.yml` — pensado para PostgreSQL, local o gestionado (Supabase). |
 
-El proyecto también trae el driver de PostgreSQL en el `pom.xml` por si se quiere agregar un tercer perfil análogo al de MySQL.
+Los tres perfiles conviven sin pisarse. Ver [INSTALACION.md](INSTALACION.md) para el despliegue en Render + Supabase.
