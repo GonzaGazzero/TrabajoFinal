@@ -83,7 +83,10 @@
 
           <div class="form-group">
             <label for="filter-fecha" class="form-label">📅 Fecha</label>
-            <input type="date" id="filter-fecha" class="form-control">
+            <div class="datetime-wrap">
+              <input type="date" id="filter-fecha" class="form-control">
+              <span class="datetime-placeholder">dd/mm/aaaa</span>
+            </div>
           </div>
 
           <div class="form-group">
@@ -157,12 +160,18 @@
           <div class="filters-grid" style="margin-bottom: 14px;">
             <div class="form-group">
               <label for="create-fecha" class="form-label">📅 Fecha del Partido *</label>
-              <input type="date" id="create-fecha" class="form-control" required>
+              <div class="datetime-wrap">
+                <input type="date" id="create-fecha" class="form-control" required>
+                <span class="datetime-placeholder">dd/mm/aaaa</span>
+              </div>
             </div>
 
             <div class="form-group">
               <label for="create-hora" class="form-label">🕐 Hora de Inicio *</label>
-              <input type="time" id="create-hora" class="form-control" required>
+              <div class="datetime-wrap">
+                <input type="time" id="create-hora" class="form-control" required>
+                <span class="datetime-placeholder">hh:mm</span>
+              </div>
             </div>
           </div>
 

@@ -18,12 +18,22 @@ document.addEventListener('DOMContentLoaded', () => {
     await renderMatchesList();
     setupEventListeners();
 
-    const dateInput = document.getElementById('filter-fecha');
     const createDateInput = document.getElementById('create-fecha');
     if (createDateInput) {
       const today = new Date().toISOString().split('T')[0];
       createDateInput.value = today;
     }
+
+    ['filter-fecha', 'create-fecha', 'create-hora'].forEach(id => {
+      const input = document.getElementById(id);
+      if (!input) return;
+      const wrap = input.closest('.datetime-wrap');
+      if (!wrap) return;
+      const refresh = () => wrap.classList.toggle('has-value', !!input.value);
+      input.addEventListener('input', refresh);
+      input.addEventListener('change', refresh);
+      refresh();
+    });
   }
 
   async function populateSelectOptions() {
@@ -765,6 +775,10 @@ document.addEventListener('DOMContentLoaded', () => {
           const created = await ApiService.createPartido(newMatchData);
           showToast("🚀 ¡Partido creado con éxito!", "success");
           formCreate.reset();
+          document.querySelectorAll('#form-create-match .datetime-wrap').forEach(wrap => {
+            const input = wrap.querySelector('input');
+            wrap.classList.toggle('has-value', !!(input && input.value));
+          });
           switchView('view-list');
           await renderMatchesList();
         } catch (err) {
