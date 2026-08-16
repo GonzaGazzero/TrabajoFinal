@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CuartaPala - Coordinación de Partidos de Pádel</title>
+  <meta name="description"
+    content="Plataforma web para coordinar partidos de pádel, encontrar jugadores y unirse a partidos cercanos según tu zona y nivel.">
+  <link rel="icon" href="images/cuartapala-icon.png" type="image/png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+  <div class="intro-overlay" id="intro-overlay">
+    <div class="intro-content">
+      <div class="intro-icon-wrap">
+        <div class="intro-ring"></div>
+        <div class="intro-ring intro-ring-2"></div>
+        <img src="images/cuartapala-icon.png" alt="CuartaPala" class="intro-icon">
+      </div>
+      <div class="intro-brand">Cuarta<span>Pala</span></div>
+      <div class="intro-tagline">Completá tu partido</div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var overlay = document.getElementById('intro-overlay');
+      overlay.classList.add('active');
+
+      function dismiss() {
+        if (overlay.classList.contains('fading')) return;
+        overlay.classList.add('fading');
+        setTimeout(function () { overlay.remove(); }, 450);
+      }
+
+      setTimeout(dismiss, 1850);
+      overlay.addEventListener('click', dismiss);
+    })();
+  </script>
+
+  <div class="app-container">
+
+    <header class="navbar">
+      <div class="brand" id="brand-logo">
+        <img src="images/cuartapala-icon.png" alt="CuartaPala Logo" class="brand-logo-img">
+        <div class="brand-text-group">
+          <div class="brand-name">Cuarta<span>Pala</span></div>
+          <div class="brand-tagline">Completá tu partido</div>
+        </div>
+      </div>
+
+      <nav class="desktop-nav">
+        <button class="nav-link active" data-view="view-list">Explorar Partidos</button>
+        <button class="nav-link" data-view="view-create-match">Crear Partido</button>
+        <button class="nav-link" data-view="view-my-matches">Mis Partidos</button>
+      </nav>
+
+      <div class="user-status" id="user-status-container">
+      </div>
+    </header>
+
+    <main class="view active" id="view-list">
+      <div class="section-header">
+        <h1 class="section-title">Partidos Disponibles</h1>
+        <p class="section-subtitle">Encuentra tu próximo partido de pádel y sumate a jugar</p>
+      </div>
+
+      <section class="filters-card">
+        <div class="filters-grid">
+
+          <div class="form-group search-zona-group">
+            <label for="filter-zona" class="form-label">📍 Zona / Localidad</label>
+            <div class="autocomplete-wrapper">
+              <div class="search-input-wrapper">
+                <input type="text" id="filter-zona" class="form-control" placeholder="🔎 Buscar zona o ciudad..." autocomplete="off">
+                <button type="button" class="btn-clear-input" id="btn-clear-zona" title="Limpiar búsqueda">&times;</button>
+              </div>
+              <div class="autocomplete-dropdown" id="dropdown-filter-zona"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="filter-fecha" class="form-label">📅 Fecha</label>
+            <input type="date" id="filter-fecha" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="filter-nivel" class="form-label">🏆 Nivel de Juego</label>
+            <select id="filter-nivel" class="form-select">
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="filter-genero" class="form-label">👫 Categoría / Género</label>
+            <select id="filter-genero" class="form-select">
+              <option value="Todos" selected>Todos los géneros</option>
+              <option value="Mixto">👫 Mixto</option>
+              <option value="Masculino">👨 Masculino</option>
+              <option value="Femenino">👩 Femenino</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="proximity-toggle">
+          <div class="toggle-label">
+            <span>📍</span> Ordenar por cercanía (Geolocalización)
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-cercania">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <div class="matches-list" id="matches-list-container">
+      </div>
+    </main>
+
+    <section class="view" id="view-create-match">
+      <div class="section-header">
+        <h1 class="section-title">Crear Nuevo Partido</h1>
+        <p class="section-subtitle">Publica un partido y encuentra los jugadores que te faltan</p>
+      </div>
+
+      <div class="filters-card">
+        <form id="form-create-match">
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label for="create-cancha" class="form-label">🎾 Club / Nombre de la Cancha *</label>
+            <input type="text" id="create-cancha" class="form-control" placeholder="Ej: Padel Club Belgrano" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label for="create-direccion" class="form-label">📍 Dirección (Opcional)</label>
+            <input type="text" id="create-direccion" class="form-control" placeholder="Ej: Av. Cabildo 2450">
+          </div>
+
+          <div class="filters-grid" style="margin-bottom: 14px;">
+            <div class="form-group search-zona-group">
+              <label for="create-zona" class="form-label">📍 Zona / Localidad *</label>
+              <div class="autocomplete-wrapper">
+                <input type="text" id="create-zona" class="form-control" placeholder="🔎 Buscar o escribir localidad..." required autocomplete="off">
+                <div class="autocomplete-dropdown" id="dropdown-create-zona"></div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="create-nivel" class="form-label">🏆 Nivel Requerido *</label>
+              <select id="create-nivel" class="form-select" required>
+              </select>
+            </div>
+          </div>
+
+          <div class="filters-grid" style="margin-bottom: 14px;">
+            <div class="form-group">
+              <label for="create-fecha" class="form-label">📅 Fecha del Partido *</label>
+              <input type="date" id="create-fecha" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label for="create-hora" class="form-label">🕐 Hora de Inicio *</label>
+              <input type="time" id="create-hora" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="filters-grid" style="margin-bottom: 20px;">
+            <div class="form-group">
+              <label for="create-genero" class="form-label">👫 Categoría / Género *</label>
+              <select id="create-genero" class="form-select" required>
+                <option value="Mixto" selected>👫 Mixto</option>
+                <option value="Masculino">👨 Masculino (Hombres)</option>
+                <option value="Femenino">👩 Femenino (Mujeres)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="create-cupos-faltantes" class="form-label">🧑‍🤝‍🧑 ¿Cuántos jugadores te faltan? *</label>
+              <select id="create-cupos-faltantes" class="form-select" required>
+                <option value="3">Me faltan 3 jugadores (somos 1)</option>
+                <option value="2">Me faltan 2 jugadores (somos 2)</option>
+                <option value="1" selected>Me falta 1 jugador (somos 3)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="create-precio" class="form-label">💵 Costo estimado por persona</label>
+              <input type="text" id="create-precio" class="form-control" placeholder="Ej: $4.000">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-full">
+            🚀 Publicar Partido
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <section class="view" id="view-my-matches">
+      <div class="section-header">
+        <h1 class="section-title">Mis Partidos</h1>
+        <p class="section-subtitle">Gestiona tus partidos organizados y las convocatorias donde estás anotado</p>
+      </div>
+
+      <div class="tabs-container">
+        <button class="tab-btn active" id="tab-unidos" data-tab="unidos">A los que me uní</button>
+        <button class="tab-btn" id="tab-creados" data-tab="creados">Creados por mí</button>
+      </div>
+
+      <div class="matches-list" id="my-matches-list">
+      </div>
+    </section>
+
+    <button class="fab-create" id="fab-create-btn" title="Crear Partido">+</button>
+
+    <nav class="mobile-nav">
+      <button class="mobile-nav-item active" data-view="view-list">
+        <svg viewBox="0 0 24 24">
+          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+        </svg>
+        <span>Explorar</span>
+      </button>
+
+      <button class="mobile-nav-item" data-view="view-create-match">
+        <svg viewBox="0 0 24 24">
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+        </svg>
+        <span>Crear</span>
+      </button>
+
+      <button class="mobile-nav-item" data-view="view-my-matches">
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z" />
+        </svg>
+        <span>Mis Partidos</span>
+      </button>
+    </nav>
+
+    <div class="modal-overlay" id="modal-detail">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title" id="modal-match-title">Detalle del Partido</h2>
+          <button class="btn-close" id="btn-close-detail">&times;</button>
+        </div>
+
+        <div id="modal-match-body">
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-auth">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title" id="auth-modal-title">Iniciar Sesión</h2>
+          <button class="btn-close" id="btn-close-auth">&times;</button>
+        </div>
+
+        <div class="tabs-container">
+          <button class="tab-btn active" id="auth-tab-login">Login</button>
+          <button class="tab-btn" id="auth-tab-register">Registro</button>
+        </div>
+
+        <form id="form-login">
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label for="login-email" class="form-label">Correo Electrónico *</label>
+            <input type="email" id="login-email" class="form-control" placeholder="tu@email.com" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label for="login-password" class="form-label">Contraseña *</label>
+            <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-full">
+            Iniciar Sesión
+          </button>
+        </form>
+
+        <form id="form-register" style="display: none;">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="register-name" class="form-label">Nombre y Apellido *</label>
+            <input type="text" id="register-name" class="form-control" placeholder="Ej: Gonzalo Gazzero" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="register-email" class="form-label">Correo Electrónico *</label>
+            <input type="email" id="register-email" class="form-control" placeholder="tu@email.com" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="register-phone" class="form-label">Teléfono / WhatsApp (para coordinación) *</label>
+            <input type="tel" id="register-phone" class="form-control" placeholder="Ej: 5491134567890" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="register-nivel" class="form-label">Nivel de Juego / Categoría *</label>
+            <select id="register-nivel" class="form-select" required>
+              <option value="8va Categoría">8va Categoría (Iniciación)</option>
+              <option value="7ma Categoría">7ma Categoría</option>
+              <option value="6ta Categoría">6ta Categoría</option>
+              <option value="5ta Categoría" selected>5ta Categoría</option>
+              <option value="4ta Categoría">4ta Categoría</option>
+              <option value="3ra Categoría">3ra Categoría</option>
+              <option value="2da Categoría">2da Categoría</option>
+              <option value="1ra Categoría">1ra Categoría (Profesional / Pro)</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="register-password" class="form-label">Contraseña *</label>
+            <input type="password" id="register-password" class="form-control" placeholder="••••••••" required>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label for="register-confirm-password" class="form-label">Confirmar Contraseña *</label>
+            <input type="password" id="register-confirm-password" class="form-control" placeholder="••••••••" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-full">
+            Crear Cuenta
+          </button>
+        </form>
+
+      </div>
+    </div>
+
+    <footer class="app-footer">
+      <p>© 2026 <strong>CuartaPala</strong> • Proyecto Académico Integrador</p>
+      <div class="footer-links">
+        <button class="footer-link-btn" id="btn-open-legal">Aviso Legal & Términos de Uso</button>
+      </div>
+    </footer>
+
+    <div class="modal-overlay" id="modal-legal">
+      <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+          <h2 class="modal-title">Aviso Legal y Términos de Uso</h2>
+          <button class="btn-close" id="btn-close-legal">&times;</button>
+        </div>
+        <div class="legal-content" style="display:flex; flex-direction:column; gap:12px; font-size:0.875rem; color:var(--text-muted); line-height:1.6; padding-top: 10px;">
+          <p><strong>1. Uso Académico:</strong> CuartaPala es una plataforma desarrollada como Trabajo Final para la Tecnicatura Universitaria en Programación. Su propósito es exclusivamente educativo e integrador de conocimientos técnico-académicos.</p>
+          <p><strong>2. Protección de Datos Personales (Ley 25.326):</strong> Los datos provistos por los usuarios se destinan únicamente al funcionamiento básico de autenticación y coordinación de encuentros. No se comparten ni se comercializan con terceros.</p>
+          <p><strong>3. Geolocalización y Privacidad:</strong> La geolocalización es de activación voluntaria. Las coordenadas son procesadas efímeramente en memoria para calcular distancias relativas (fórmula de Haversine) y no son almacenadas ni rastreadas en segundo plano.</p>
+          <p><strong>4. Exención de Responsabilidad:</strong> La plataforma funciona únicamente como nexo de comunicación entre jugadores. No organiza de manera directa eventos deportivos, ni se responsabiliza por reservas, pagos, lesiones físicas o ausencias de participantes.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast-notification">
+      <span id="toast-message">Mensaje de prueba</span>
+    </div>
+
+  </div>
+
+  <script src="js/mockData.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>

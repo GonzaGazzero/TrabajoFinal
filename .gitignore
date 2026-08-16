@@ -1,0 +1,19 @@
+# Backend (Maven / Java)
+Back/target/
+Back/.mvn/
+Back/*.log
+*.class
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.claude/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Variables de entorno locales (nunca subir credenciales reales)
+.env
+.env.local

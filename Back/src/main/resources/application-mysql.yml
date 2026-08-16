@@ -1,0 +1,24 @@
+spring:
+  config:
+    activate:
+      on-profile: mysql
+
+  datasource:
+    # En hosting, sobreescribir con las variables de entorno DB_URL / DB_USERNAME / DB_PASSWORD
+    # que provea la plataforma (Railway, Render, etc.). Los valores por defecto son para desarrollo local.
+    url: ${DB_URL:jdbc:mysql://localhost:3306/padelconnect_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:pass}
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# jwt.secret / jwt.expiration-ms se heredan de application.yml (ya soportan
+# override por variable de entorno JWT_SECRET / JWT_EXPIRATION_MS).
