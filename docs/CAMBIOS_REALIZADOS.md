@@ -124,3 +124,15 @@ En base a eso se cambió la base de datos de producción de MySQL a PostgreSQL:
 - Se agregó `Back/src/main/resources/application-postgres.yml` (perfil `postgres`), análogo al de MySQL, usando el mismo contrato de variables de entorno (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`) ya establecido. El perfil `mysql` se dejó intacto para quien quiera seguir usándolo en desarrollo local.
 - Se instaló PostgreSQL localmente y se corrió el flujo completo (registro de dos usuarios, crear partido, unirse, aceptar solicitud) contra una base Postgres real para confirmar que Hibernate crea el esquema correctamente y que el comportamiento es idéntico al de MySQL/H2. Los 8 tests automatizados se volvieron a correr después del cambio y siguen pasando.
 - Se actualizó `docs/INSTALACION.md` con el paso a paso concreto para Render (backend) + Supabase (base) + Netlify (frontend), reemplazando la guía anterior de Railway.
+
+## Quinta ronda: despliegue real, limpieza de código y ajustes de mobile
+
+- Se desplegaron los tres servicios y se dejaron funcionando en producción: backend en Render (Docker), base en Supabase (PostgreSQL) y frontend en Netlify. Se depuró en el camino un `DB_URL` mal formado (le faltaba el `//` después de `jdbc:postgresql:`, lo que hacía que el driver intentara conectarse a `localhost` en vez del host real de Supabase) y un despliegue que fallaba por tener cambios locales (`Dockerfile`, perfil `postgres`, etc.) sin commitear ni pushear al repo.
+- Se sacaron todos los comentarios del código (frontend y backend) a pedido explícito.
+- Se revisó la app en varios anchos de pantalla (320px, 375px, 768px, desktop). Se encontró y corrigió un bug real: el botón flotante "+" (redundante con la pestaña "Crear" del nav inferior en mobile) quedaba tapando el link "Aviso Legal" del footer al hacer scroll hasta el final en pantallas chicas; ahora ese botón solo se muestra en desktop.
+- Se reemplazaron los datos de ejemplo que exponían el nombre real del autor (placeholder del campo "Nombre y Apellido" en el registro, y el usuario mock del modo offline) por valores genéricos.
+
+## Sexta ronda: diagramas y documentación completa
+
+- Se agregó el diagrama de clases (modelo de dominio orientado a objetos: `Usuario`, `Partido`, `Inscripcion`, `EstadoInscripcion`, con atributos, métodos relevantes y multiplicidad de cada asociación) y el diagrama de casos de uso (actor único `Usuario`, 9 casos de uso principales y las relaciones `«include»` hacia "Iniciar sesión" y entre "Gestionar solicitudes" y "Aceptar/Rechazar solicitud"). Ambos se incorporaron en dos formatos: Mermaid en [DIAGRAMAS.md](DIAGRAMAS.md) (se renderiza nativo en GitHub) y como imágenes en la documentación Word.
+- Se sincronizó la sección de instalación del documento Word con `INSTALACION.md`: tenía una referencia desactualizada a una constante `API_BASE_URL` fija y no mencionaba el despliegue real a Render/Supabase/Netlify. Se corrigió y se agregó la sección "Despliegue a producción" con la tabla de variables de entorno.

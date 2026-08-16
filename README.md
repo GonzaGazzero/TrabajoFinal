@@ -36,6 +36,7 @@ Trabajo final/
     ├── ARQUITECTURA.md
     ├── API.md
     ├── BASE_DE_DATOS.md
+    ├── DIAGRAMAS.md
     ├── INSTALACION.md
     └── CAMBIOS_REALIZADOS.md
 ```
@@ -60,6 +61,7 @@ Ver [docs/INSTALACION.md](docs/INSTALACION.md) para el detalle completo, incluye
 - [Arquitectura](docs/ARQUITECTURA.md) — capas, seguridad, flujo de datos.
 - [API REST](docs/API.md) — referencia completa de endpoints.
 - [Modelo de datos](docs/BASE_DE_DATOS.md) — entidades, relaciones y reglas de negocio.
+- [Diagramas](docs/DIAGRAMAS.md) — diagrama de clases y de casos de uso.
 - [Instalación y ejecución](docs/INSTALACION.md) — guía paso a paso.
 - [Revisión y cambios realizados](docs/CAMBIOS_REALIZADOS.md) — auditoría de código y fixes aplicados.
 
