@@ -1100,6 +1100,22 @@ input:checked + .slider:before {
   gap: 6px;
 }
 
+@media (max-width: 480px) {
+  .applicant-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .applicant-actions {
+    width: 100%;
+  }
+
+  .applicant-actions .btn {
+    flex: 1;
+  }
+}
+
 .btn-sm {
   padding: 6px 12px;
   font-size: 0.8rem;

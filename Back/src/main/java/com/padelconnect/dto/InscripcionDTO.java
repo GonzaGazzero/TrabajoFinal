@@ -9,15 +9,17 @@ public class InscripcionDTO {
     private UserDto jugador;
     private EstadoInscripcion estado;
     private String fechaInscripcion;
+    private String mensaje;
 
     public InscripcionDTO() {
     }
 
-    public InscripcionDTO(Long id, UserDto jugador, EstadoInscripcion estado, String fechaInscripcion) {
+    public InscripcionDTO(Long id, UserDto jugador, EstadoInscripcion estado, String fechaInscripcion, String mensaje) {
         this.id = id;
         this.jugador = jugador;
         this.estado = estado;
         this.fechaInscripcion = fechaInscripcion;
+        this.mensaje = mensaje;
     }
 
     public static InscripcionDTO fromEntity(Inscripcion inscripcion) {
@@ -26,7 +28,8 @@ public class InscripcionDTO {
                 inscripcion.getId(),
                 UserDto.fromEntity(inscripcion.getJugador()),
                 inscripcion.getEstado(),
-                inscripcion.getFechaInscripcion() != null ? inscripcion.getFechaInscripcion().toString() : null
+                inscripcion.getFechaInscripcion() != null ? inscripcion.getFechaInscripcion().toString() : null,
+                inscripcion.getMensaje()
         );
     }
 
@@ -60,5 +63,13 @@ public class InscripcionDTO {
 
     public void setFechaInscripcion(String fechaInscripcion) {
         this.fechaInscripcion = fechaInscripcion;
+    }
+
+    public String getMensaje() {
+        return mensaje;
+    }
+
+    public void setMensaje(String mensaje) {
+        this.mensaje = mensaje;
     }
 }

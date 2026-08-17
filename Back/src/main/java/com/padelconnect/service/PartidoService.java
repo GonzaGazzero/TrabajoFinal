@@ -16,6 +16,8 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -77,6 +79,7 @@ public class PartidoService {
 
         List<PartidoResponseDTO> responseDTOs = partidos.stream()
                 .map(partido -> buildPartidoResponseDTO(partido, userLat, userLng, currentUser))
+                .filter(dto -> dto.getCuposDisponibles() == null || dto.getCuposDisponibles() > 0)
                 .collect(Collectors.toList());
 
         if ("cercania".equalsIgnoreCase(orden) || userLat != null) {
@@ -145,7 +148,7 @@ public class PartidoService {
     }
 
     @Transactional
-    public PartidoResponseDTO unirseAPartido(Long partidoId, Usuario usuario) {
+    public PartidoResponseDTO unirseAPartido(Long partidoId, Usuario usuario, String mensaje) {
         if (usuario == null) {
             String msg = messageSource.getMessage("error.user.unauthorized", null, LocaleContextHolder.getLocale());
             throw new BadRequestException(msg);
@@ -171,12 +174,14 @@ public class PartidoService {
                 throw new AlreadyJoinedException(alreadyJoinedMsg);
             } else {
                 inc.setEstado(EstadoInscripcion.PENDIENTE);
+                inc.setMensaje(mensaje);
                 inscripcionRepository.save(inc);
                 return buildPartidoResponseDTO(partido, null, null, usuario);
             }
         }
 
         Inscripcion nuevaInscripcion = new Inscripcion(partido, usuario, EstadoInscripcion.PENDIENTE);
+        nuevaInscripcion.setMensaje(mensaje);
         inscripcionRepository.save(nuevaInscripcion);
 
         return buildPartidoResponseDTO(partido, null, null, usuario);
@@ -262,6 +267,32 @@ public class PartidoService {
                 .orElseThrow(() -> new BadRequestException(notJoinedMsg));
 
         inscripcionRepository.delete(inscripcion);
+    }
+
+    @Transactional
+    public void eliminarPartido(Long partidoId, Usuario currentUser) {
+        if (currentUser == null) {
+            String msg = messageSource.getMessage("error.user.unauthorized", null, LocaleContextHolder.getLocale());
+            throw new BadRequestException(msg);
+        }
+
+        String notFoundMsg = messageSource.getMessage("error.match.notfound", null, LocaleContextHolder.getLocale());
+        Partido partido = partidoRepository.findById(partidoId)
+                .orElseThrow(() -> new ResourceNotFoundException(notFoundMsg));
+
+        if (!partido.getOrganizador().getId().equals(currentUser.getId())) {
+            String notOrgMsg = messageSource.getMessage("error.match.not_organizer", null, LocaleContextHolder.getLocale());
+            throw new BadRequestException(notOrgMsg);
+        }
+
+        LocalDateTime inicio = LocalDateTime.parse(partido.getFecha() + "T" + partido.getHora());
+        if (Duration.between(LocalDateTime.now(), inicio).toMinutes() < 60) {
+            String tooLateMsg = messageSource.getMessage("error.match.delete_too_late", null, LocaleContextHolder.getLocale());
+            throw new BadRequestException(tooLateMsg);
+        }
+
+        inscripcionRepository.deleteAll(inscripcionRepository.findByPartido(partido));
+        partidoRepository.delete(partido);
     }
 
     @Transactional(readOnly = true)

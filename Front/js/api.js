@@ -31,7 +31,8 @@ const ApiService = {
       iniciales: s.jugador ? s.jugador.avatarIniciales : 'JG',
       telefono: s.jugador ? s.jugador.telefono : '',
       nivel: s.jugador ? s.jugador.nivel : '',
-      estado: s.estado
+      estado: s.estado,
+      mensaje: s.mensaje || null
     }));
 
     return {
@@ -389,6 +390,8 @@ const ApiService = {
       result.sort((a, b) => (a.distanciaKm || 999) - (b.distanciaKm || 999));
     }
 
+    result = result.filter(m => (m.cuposDisponibles ?? 1) > 0);
+
     return result;
   },
 
@@ -496,11 +499,12 @@ const ApiService = {
     return newMatch;
   },
 
-  async unirseAPartido(partidoId) {
+  async unirseAPartido(partidoId, mensaje) {
     try {
       const response = await fetch(`${API_BASE_URL}/partidos/${partidoId}/unirse`, {
         method: 'POST',
-        headers: this.getHeaders(true)
+        headers: this.getHeaders(true),
+        body: JSON.stringify({ mensaje: mensaje || null })
       });
 
       const data = await this.parseJsonSafe(response);
@@ -551,7 +555,8 @@ const ApiService = {
       iniciales: iniciales,
       telefono: currentUser.telefono || "5491134567890",
       nivel: currentUser.nivel || match.nivel,
-      estado: "PENDIENTE"
+      estado: "PENDIENTE",
+      mensaje: mensaje || null
     });
 
     saveStoredMatches(matches);
@@ -642,6 +647,32 @@ const ApiService = {
       saveStoredMatches(matches);
     }
     return match;
+  },
+
+  async eliminarPartido(partidoId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/partidos/${partidoId}`, {
+        method: 'DELETE',
+        headers: this.getHeaders(true)
+      });
+
+      const data = await this.parseJsonSafe(response);
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || "No se pudo eliminar el partido");
+      }
+
+      return data;
+    } catch (err) {
+      if (err.message && err.message !== "Failed to fetch") {
+        throw err;
+      }
+    }
+
+    const matches = getStoredMatches();
+    const remaining = matches.filter(m => String(m.id) !== String(partidoId));
+    saveStoredMatches(remaining);
+    return { message: "Partido eliminado" };
   },
 
   async getMisPartidos() {

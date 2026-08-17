@@ -9,6 +9,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let activeMyMatchesTab = 'unidos';
   let currentSelectedMatchId = null;
+  let pendingJoinMatchId = null;
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text ?? '';
+    return div.innerHTML;
+  }
 
   initApp();
 
@@ -262,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       container.querySelectorAll('.btn-quick-join').forEach(btn => {
-        btn.addEventListener('click', () => handleQuickJoin(btn.dataset.id));
+        btn.addEventListener('click', () => openJoinRequestModal(btn.dataset.id));
       });
 
       container.querySelectorAll('.btn-contact-wa').forEach(btn => {
@@ -328,6 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
                       <div>
                         <div class="player-name">${s.nombre}</div>
                         <div style="font-size:0.75rem; color:var(--text-muted);">${s.nivel || match.nivel} • 📱 ${s.telefono || 'Sin cel'}</div>
+                        ${s.mensaje ? `<div style="font-size:0.8rem; color:var(--text-main); font-style:italic; margin-top:4px; background:rgba(255,255,255,0.04); padding:6px 10px; border-radius:var(--radius-sm); border-left:2px solid var(--primary);">💬 "${escapeHtml(s.mensaje)}"</div>` : ''}
                       </div>
                     </div>
                     <div class="applicant-actions">
@@ -369,10 +377,16 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `;
       } else if (isOrganizer) {
+        const minutosHastaInicio = (new Date(`${match.fecha}T${match.hora}`) - new Date()) / 60000;
+        const puedeEliminar = Number.isFinite(minutosHastaInicio) ? minutosHastaInicio >= 60 : true;
         bottomActionHtml = `
           <div style="text-align:center; font-size:0.85rem; color:var(--primary); font-weight:700;">
             👑 Eres el organizador de este partido.
           </div>
+          ${puedeEliminar
+            ? `<button class="btn btn-full" id="btn-delete-match" style="border:1px solid var(--danger); color:var(--danger); background:transparent;">🗑️ Eliminar Partido</button>`
+            : `<div style="text-align:center; font-size:0.8rem; color:var(--text-muted);">No podés eliminar el partido a menos de 1 hora de su inicio.</div>`
+          }
         `;
       } else {
         bottomActionHtml = `
@@ -474,9 +488,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const joinBtn = document.getElementById('btn-modal-join');
       if (joinBtn && !isFull && !isJoined && !isPending && !isOrganizer) {
-        joinBtn.addEventListener('click', async () => {
-          await handleQuickJoin(matchId);
-          openMatchDetailModal(matchId);
+        joinBtn.addEventListener('click', () => {
+          modal.classList.remove('active');
+          openJoinRequestModal(matchId);
+        });
+      }
+
+      const deleteBtn = modalBody.querySelector('#btn-delete-match');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', async () => {
+          if (!confirm(`¿Seguro que querés eliminar "${match.cancha}"? Esta acción no se puede deshacer.`)) return;
+          try {
+            await ApiService.eliminarPartido(matchId);
+            showToast("🗑️ Partido eliminado", "success");
+            modal.classList.remove('active');
+            await renderMatchesList();
+          } catch (err) {
+            showToast(`⚠️ ${err.message}`, "danger");
+          }
         });
       }
 
@@ -493,14 +522,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  async function handleQuickJoin(matchId) {
+  async function handleQuickJoin(matchId, mensaje) {
     try {
-      const updatedMatch = await ApiService.unirseAPartido(matchId);
+      const updatedMatch = await ApiService.unirseAPartido(matchId, mensaje);
       showToast(`⌛ Solicitud enviada al creador del partido (${updatedMatch.cancha}). Quedó en estado pendiente.`, "success");
       await renderMatchesList();
     } catch (err) {
       showToast(`⚠️ ${err.message}`, "danger");
     }
+  }
+
+  function openJoinRequestModal(matchId) {
+    pendingJoinMatchId = matchId;
+    const input = document.getElementById('join-mensaje-input');
+    if (input) input.value = '';
+    document.getElementById('modal-join-request').classList.add('active');
   }
 
   async function renderMyMatches() {
@@ -810,6 +846,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalDetail = document.getElementById('modal-detail');
     if (btnCloseDetail) {
       btnCloseDetail.addEventListener('click', () => modalDetail.classList.remove('active'));
+    }
+
+    const modalJoinRequest = document.getElementById('modal-join-request');
+    const btnCloseJoinRequest = document.getElementById('btn-close-join-request');
+    const btnCancelJoinRequest = document.getElementById('btn-cancel-join-request');
+    const btnConfirmJoinRequest = document.getElementById('btn-confirm-join-request');
+    if (modalJoinRequest) {
+      const closeJoinRequest = () => {
+        modalJoinRequest.classList.remove('active');
+        pendingJoinMatchId = null;
+      };
+      if (btnCloseJoinRequest) btnCloseJoinRequest.addEventListener('click', closeJoinRequest);
+      if (btnCancelJoinRequest) btnCancelJoinRequest.addEventListener('click', closeJoinRequest);
+      if (btnConfirmJoinRequest) {
+        btnConfirmJoinRequest.addEventListener('click', async () => {
+          if (!pendingJoinMatchId) return;
+          const mensaje = document.getElementById('join-mensaje-input').value.trim();
+          const matchId = pendingJoinMatchId;
+          closeJoinRequest();
+          await handleQuickJoin(matchId, mensaje);
+        });
+      }
     }
 
     const btnCloseAuth = document.getElementById('btn-close-auth');

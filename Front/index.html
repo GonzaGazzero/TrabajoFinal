@@ -260,6 +260,29 @@
       </div>
     </div>
 
+    <div class="modal-overlay" id="modal-join-request">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">Solicitar unirme</h2>
+          <button class="btn-close" id="btn-close-join-request">&times;</button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <p style="color:var(--text-muted); font-size:0.9rem;">
+            Contale algo al organizador (opcional) — nivel de juego, con quién venís, o lo que le sirva para decidir.
+          </p>
+          <div class="form-group">
+            <label for="join-mensaje-input" class="form-label">💬 Mensaje para el organizador</label>
+            <textarea id="join-mensaje-input" class="form-control" rows="3" maxlength="300" placeholder="Ej: Somos 2, jugamos hace 3 años a nivel 5ta..."></textarea>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-outline btn-full" id="btn-cancel-join-request">Cancelar</button>
+            <button class="btn btn-primary btn-full" id="btn-confirm-join-request">Enviar solicitud</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="modal-overlay" id="modal-auth">
       <div class="modal-content">
         <div class="modal-header">

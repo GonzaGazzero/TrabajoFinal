@@ -3,6 +3,7 @@ package com.padelconnect.controller;
 import com.padelconnect.dto.MisPartidosDTO;
 import com.padelconnect.dto.PartidoRequestDTO;
 import com.padelconnect.dto.PartidoResponseDTO;
+import com.padelconnect.dto.UnirseRequestDTO;
 import com.padelconnect.entity.Usuario;
 import com.padelconnect.service.PartidoService;
 import jakarta.validation.Valid;
@@ -72,8 +73,10 @@ public class PartidoController {
     @PostMapping("/{id}/unirse")
     public ResponseEntity<PartidoResponseDTO> unirseAPartido(
             @PathVariable Long id,
+            @RequestBody(required = false) UnirseRequestDTO body,
             @AuthenticationPrincipal Usuario currentUser) {
-        PartidoResponseDTO partido = partidoService.unirseAPartido(id, currentUser);
+        String mensaje = body != null ? body.getMensaje() : null;
+        PartidoResponseDTO partido = partidoService.unirseAPartido(id, currentUser, mensaje);
         return ResponseEntity.ok(partido);
     }
 
@@ -101,6 +104,15 @@ public class PartidoController {
             @AuthenticationPrincipal Usuario currentUser) {
         partidoService.salirDePartido(id, currentUser);
         String msg = messageSource.getMessage("message.match.left", null, LocaleContextHolder.getLocale());
+        return ResponseEntity.ok(Map.of("message", msg));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> eliminarPartido(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Usuario currentUser) {
+        partidoService.eliminarPartido(id, currentUser);
+        String msg = messageSource.getMessage("message.match.deleted", null, LocaleContextHolder.getLocale());
         return ResponseEntity.ok(Map.of("message", msg));
     }
 }

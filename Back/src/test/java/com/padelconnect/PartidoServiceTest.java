@@ -16,6 +16,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -67,7 +72,7 @@ class PartidoServiceTest {
         PartidoResponseDTO partido = partidoService.crearPartido(req, org);
 
         // j1 se une -> estado PENDIENTE
-        PartidoResponseDTO resultJ1 = partidoService.unirseAPartido(partido.getId(), j1);
+        PartidoResponseDTO resultJ1 = partidoService.unirseAPartido(partido.getId(), j1, null);
 
         assertEquals("PENDIENTE", resultJ1.getEstadoInscripcionUsuario());
         assertEquals(2, resultJ1.getJugadoresFaltantes()); // Sigue en 2 porque j1 aun no fue ACEPTADO
@@ -84,7 +89,7 @@ class PartidoServiceTest {
                 -34.6037, -58.3816, "5ta", null, 1, "$4.000", "Sintetico");
         PartidoResponseDTO partido = partidoService.crearPartido(req, org);
 
-        partidoService.unirseAPartido(partido.getId(), j1);
+        partidoService.unirseAPartido(partido.getId(), j1, null);
         PartidoResponseDTO respOrg = partidoService.obtenerPartidoPorId(partido.getId(), null, null, org);
         Long inscripcionId = respOrg.getSolicitudesPendientes().get(0).getId();
 
@@ -102,11 +107,79 @@ class PartidoServiceTest {
                 -34.6037, -58.3816, "5ta", null, 1, "$4.000", "Sintetico");
         PartidoResponseDTO partido = partidoService.crearPartido(req, org);
 
-        partidoService.unirseAPartido(partido.getId(), j1);
+        partidoService.unirseAPartido(partido.getId(), j1, null);
         PartidoResponseDTO respOrg = partidoService.obtenerPartidoPorId(partido.getId(), null, null, org);
         Long inscripcionId = respOrg.getSolicitudesPendientes().get(0).getId();
 
         // j2 intenta aceptar -> debe fallar
         assertThrows(BadRequestException.class, () -> partidoService.aceptarInscripcion(partido.getId(), inscripcionId, j2));
+    }
+
+    @Test
+    void testUnirseConMensajeQuedaGuardado() {
+        PartidoRequestDTO req = new PartidoRequestDTO("2026-08-20", "18:00", "Club Padel", "Calle 123", "CABA",
+                -34.6037, -58.3816, "5ta", null, 1, "$4.000", "Sintetico");
+        PartidoResponseDTO partido = partidoService.crearPartido(req, org);
+
+        partidoService.unirseAPartido(partido.getId(), j1, "Somos 2, jugamos hace 3 años");
+
+        PartidoResponseDTO respOrg = partidoService.obtenerPartidoPorId(partido.getId(), null, null, org);
+        assertEquals("Somos 2, jugamos hace 3 años", respOrg.getSolicitudesPendientes().get(0).getMensaje());
+    }
+
+    @Test
+    void testEliminarPartidoPorOrganizador() {
+        PartidoRequestDTO req = new PartidoRequestDTO("2026-08-20", "18:00", "Club Padel", "Calle 123", "CABA",
+                -34.6037, -58.3816, "5ta", null, 1, "$4.000", "Sintetico");
+        PartidoResponseDTO partido = partidoService.crearPartido(req, org);
+        partidoService.unirseAPartido(partido.getId(), j1, null);
+
+        partidoService.eliminarPartido(partido.getId(), org);
+
+        assertTrue(partidoRepository.findById(partido.getId()).isEmpty());
+        assertTrue(inscripcionRepository.findByPartido(
+                partidoRepository.findById(partido.getId()).orElse(null)
+        ).isEmpty());
+    }
+
+    @Test
+    void testNoOrganizadorNoPuedeEliminar() {
+        PartidoRequestDTO req = new PartidoRequestDTO("2026-08-20", "18:00", "Club Padel", "Calle 123", "CABA",
+                -34.6037, -58.3816, "5ta", null, 1, "$4.000", "Sintetico");
+        PartidoResponseDTO partido = partidoService.crearPartido(req, org);
+
+        assertThrows(BadRequestException.class, () -> partidoService.eliminarPartido(partido.getId(), j1));
+        assertTrue(partidoRepository.findById(partido.getId()).isPresent());
+    }
+
+    @Test
+    void testNoSePuedeEliminarPartidoAMenosDeUnaHora() {
+        String fechaHoy = LocalDate.now().toString();
+        String horaEnMediaHora = LocalTime.now().plusMinutes(30).truncatedTo(ChronoUnit.MINUTES).toString();
+
+        PartidoRequestDTO req = new PartidoRequestDTO(fechaHoy, horaEnMediaHora, "Club Padel", "Calle 123", "CABA",
+                -34.6037, -58.3816, "5ta", null, 1, "$4.000", "Sintetico");
+        PartidoResponseDTO partido = partidoService.crearPartido(req, org);
+
+        assertThrows(BadRequestException.class, () -> partidoService.eliminarPartido(partido.getId(), org));
+        assertTrue(partidoRepository.findById(partido.getId()).isPresent());
+    }
+
+    @Test
+    void testListarPartidosExcluyeLlenos() {
+        // jugadoresFaltantes = 1 -> cuposTotales = 2 (organizador + 1). Al aceptar a j1 queda lleno.
+        PartidoRequestDTO req = new PartidoRequestDTO("2026-08-20", "18:00", "Club Padel Lleno", "Calle 123", "CABA",
+                -34.6037, -58.3816, "5ta", null, 1, "$4.000", "Sintetico");
+        PartidoResponseDTO partidoLleno = partidoService.crearPartido(req, org);
+
+        partidoService.unirseAPartido(partidoLleno.getId(), j1, null);
+        PartidoResponseDTO respOrg = partidoService.obtenerPartidoPorId(partidoLleno.getId(), null, null, org);
+        Long inscripcionId = respOrg.getSolicitudesPendientes().get(0).getId();
+        PartidoResponseDTO lleno = partidoService.aceptarInscripcion(partidoLleno.getId(), inscripcionId, org);
+        assertEquals(0, lleno.getCuposDisponibles());
+
+        List<PartidoResponseDTO> listado = partidoService.listarPartidos(null, null, null, null, null, null, null, org);
+
+        assertTrue(listado.stream().noneMatch(p -> p.getId().equals(partidoLleno.getId())));
     }
 }

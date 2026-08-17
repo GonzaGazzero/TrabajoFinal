@@ -29,6 +29,9 @@ public class Inscripcion {
     @Column(nullable = false)
     private EstadoInscripcion estado;
 
+    @Column(length = 300)
+    private String mensaje;
+
     public Inscripcion() {
         this.fechaInscripcion = LocalDateTime.now();
         this.estado = EstadoInscripcion.PENDIENTE;
@@ -83,6 +86,14 @@ public class Inscripcion {
 
     public void setEstado(EstadoInscripcion estado) {
         this.estado = estado;
+    }
+
+    public String getMensaje() {
+        return mensaje;
+    }
+
+    public void setMensaje(String mensaje) {
+        this.mensaje = mensaje;
     }
 
     @Override
