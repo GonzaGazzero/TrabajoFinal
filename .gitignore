@@ -1,0 +1,22 @@
+# Backend (Maven / Java)
+Back/target/
+Back/.mvn/
+Back/*.log
+*.class
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Variables de entorno locales
+.env
+.env.local
+
+# Notas locales
+NOTAS_DEFENSA.md
+docs/
